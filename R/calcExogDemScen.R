@@ -1,7 +1,9 @@
 #' calculate exogenuous FE and ES demand pathways
 #' @description  prepare data for exogenuous FE and ES demand pathways that do not
 #' come from EDGE models but from other sources and/or scenario literature.
-#' REMIND can be fixed to those demand pathways if the switch cm_exogDem_scen is activated.
+#' REMIND can be fixed to those demand pathways if the switch cm_exogDem_scen is activated. 
+#' So far, this function is used only to prepare industry production trajectories
+#' based on the FORECAST model for Germany. 
 #'
 #' @return A [`magpie`][magclass::magclass] object.
 #' @author Felix Schreyer
@@ -68,9 +70,12 @@ calcExogDemScen <- function() {
     output_variables,
     FUN = function(x, y) paste0(x, ".", y)
   ))
+  
+  # industry production data from FORECAST
+  data_indst_prod <- data_forecast["DEU",,c(variable_mapping$var.forecast,gva_mapping$var.forecast)]
 
   # Convert FORECAST magclass to a clean long dataframe and keep Germany only
-  df_forecast <- quitte::as.quitte(data_forecast) %>%
+  df_forecast <- quitte::as.quitte(data_indst_prod) %>%
     dplyr::transmute(
       region = as.character(.data$region),
       scenario = as.character(.data$scenario),
@@ -83,7 +88,8 @@ calcExogDemScen <- function() {
   # get REMIND industry production trajectories
   feDemScen <- c("SSPs", "SSP2IndiaDEAs", "SSP2_lowEn", "SSP2_highDemDEU", "SSP2_NAV_all")
   remind_base <- calcOutput("FEdemand", scenario = feDemScen, signif = 4, aggregate = FALSE, warnNA = FALSE)
-  remind_base_quitte <- quitte::as.quitte(remind_base)
+  remind_base_indst_prod <- remind_base["DEU",,output_variables]
+  remind_base_quitte <- quitte::as.quitte(remind_base_indst_prod)
 
   scenario_raw <- if ("scenario" %in% colnames(remind_base_quitte)) {
     as.character(remind_base_quitte$scenario)
@@ -249,21 +255,17 @@ calcExogDemScen <- function() {
   # 5. Convert to magclass and return ----
   # Merge pre-2050 and post-2050 values and prepare final REMIND-style series names.
   df_deu_values <- dplyr::bind_rows(df_values_until_2050, df_after_2050) %>%
-    dplyr::mutate(name = paste0(.data$scen.remind, ".", .data$var.remind)) %>%
-    dplyr::select(.data$period, .data$name, .data$value) %>%
-    dplyr::distinct(.data$period, .data$name, .keep_all = TRUE)
+    dplyr::select(.data$period, .data$scen.remind, .data$var.remind, .data$value) %>%
+    dplyr::distinct(.data$period, .data$scen.remind, .data$var.remind, .keep_all = TRUE) %>% 
+    dplyr::mutate( region = "DEU") %>% 
+    dplyr::select(.data$region, .data$period,  .data$scen.remind, .data$var.remind, .data$value)
 
-  out <- new.magpie(
-    cells_and_regions = getItems(data, dim = 1),
-    years = output_years,
-    names = output_names,
-    fill = 0
-  )
-
-  for (series_name in output_names) {
-    df_name <- df_deu_values %>% dplyr::filter(.data$name == .env$series_name)
-    out["DEU", paste0("y", df_name$period), series_name] <- df_name$value
-  }
+  # convert to magclass
+  out <- df_deu_values %>% 
+          as.magpie(spatial = 1, temporal = 2, datacol = 5)
+   
+  # add other countries with NAs     
+  out <- add_columns(out, addnm = setdiff(getISOlist(), "DEU"), dim = 1, fill = NA)    
 
   list(
     x = out,
