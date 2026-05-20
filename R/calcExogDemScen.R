@@ -264,8 +264,10 @@ calcExogDemScen <- function() {
   out <- df_deu_values %>% 
           as.magpie(spatial = 1, temporal = 2, datacol = 5)
    
-  # add other countries with NAs     
-  out <- add_columns(out, addnm = setdiff(getISOlist(), "DEU"), dim = 1, fill = NA)    
+  # add other countries with 0   
+  out <- add_columns(out, addnm = setdiff(getISOlist(), "DEU"), dim = 1, fill = 0) 
+  # set NA values in Germany to 0, the corresponding cannot handle NAs and will disregard 0
+  out[is.na(out)] <- 0
 
   list(
     x = out,
