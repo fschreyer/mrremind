@@ -16,7 +16,7 @@
 #' - 'Ghgshare': share of emissions covered under NDC target per REMIND region
 #' @author Rahel Mandaroux, Falk Benke, Felix Schreyer
 #'
-calcEmiTarget <- function(sources, subtype) {
+calcNDCTargets <- function(sources, subtype) {
   # Main steps:
   # 1. Read country-level NDC targets as absolute emissions targets in MtCO2eq/yr
   # 2. Make country-specific assumptions about inclusions or adaptations of NDC targets
@@ -27,7 +27,7 @@ calcEmiTarget <- function(sources, subtype) {
   # 1. Read country-level NDC targets as absolute emissions targets ----
 
   if (sources != "PBL_NDC") {
-    stop("Unknown source ", sources, " for calcEmiTarget.")
+    stop("Unknown source ", sources, " for calcNDCTargets.")
   }
 
   if (!subtype %in% c("Ghgshare", "EmiTargetAbs")) {
