@@ -181,8 +181,6 @@ fullREMIND <- function() {
   calcOutput("NDCTargets", sources = "PBL_NDC", subtype = "EmiTargetAbs", round = 4, file = "fm_EmiTargetAbs.cs4r")
   calcOutput("NDCTargets", sources = "PBL_NDC", subtype = "Ghgshare", round = 4, file = "fm_shareTarget.cs4r")
 
-  # capacity targets from UNFCCC
-  calcOutput("CapTarget", sources = "UNFCCC_NDC+REN21+CHN_NUC", round = 4, file = "f40_NDC+REN21+CHN_NUC.cs3r")
   # capacity targets from NewClimate protocol
   calcOutput("CapTarget", sources = "NewClimate", round = 4, file = "f40_NewClimate.cs3r")
 
